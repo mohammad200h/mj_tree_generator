@@ -10,7 +10,7 @@ def sampling_from_upper_hemisphere(num_samples, phi_lower_limit=0, phi_upper_lim
     # https://www.youtube.com/watch?v=Ex_g2w4E5lQ&t=201s
     samples = []
     for i in range(num_samples):
-        slice = (2 * np.pi)/4
+        slice = (2 * np.pi)/num_samples
         limit = [i * slice , (i+1) * slice  ]
         theta = np.random.uniform(limit[0],limit[1])  # Azimuthal angle
         phi = np.random.uniform(phi_lower_limit ,phi_upper_limit)    # Polar angle (upper hemisphere only)
