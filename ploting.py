@@ -2,17 +2,17 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-from branch_angles import sampling_from_upper_hemisphere,get_frame_rotation
+from recursive_branching_tree import sampling_from_upper_hemisphere
+
 
 def plot_spherical_coordinate_vectors(points):
     soa = []
-    # adding origin to vecotrs
+    # adding origin to vectors
     for p in points:
         point = [float(num) for num in p]
         vector = [0,0,0] + point
-        print(f"vector::{vector}")
         soa.append(vector)
-        print(f"soa::{soa}")
+
 
 
     soa = np.array(soa)
@@ -27,7 +27,5 @@ def plot_spherical_coordinate_vectors(points):
     plt.show()
 
 
-vectors,_ = sampling_from_upper_hemisphere(4,0.5)
-beta,gamma = get_frame_rotation(vectors[0])
-print(f"beta:: {beta}, gamma::{gamma}")
+vectors = sampling_from_upper_hemisphere(4)
 plot_spherical_coordinate_vectors(vectors)
