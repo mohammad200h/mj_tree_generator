@@ -6,17 +6,13 @@ import math
 import uuid
 
 from branch_angles import (rotation_matrix_to_quaternion,
-                           align_z_to_vector,
-                           random_vector_upper_hemisphere
+                           get_frame_rotation,
+
+                           sampling_from_upper_hemisphere
 )
 
-def circle_coordinates(radius, angle):
-    x = radius * math.cos(angle)
-    y = radius * math.sin(angle)
-    return x, y
-
-def tree(num_child_branch = 6, branch_length = 0.5, thickness = 0.05,bhpr = [0.3 , 0.5],
-         max_levels = 4, current_body = None,
+def tree(num_child_branch = 5, branch_length = 0.5, thickness = 0.05,bhpr = [0.3 , 0.5],
+         max_levels = 3, current_body = None,
          spec = None ):
 
   root, spec = None, None
@@ -48,11 +44,12 @@ def tree(num_child_branch = 6, branch_length = 0.5, thickness = 0.05,bhpr = [0.3
   bhpr = [i*2/3 for i in bhpr]
   branch_length *= 2/3
   rgba = [random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1]
+
+  sample_targets, samples_angle = sampling_from_upper_hemisphere(num_child_branch, 0.2,np.pi / 3)
+
   for i in range(num_child_branch):
     if max_levels <= 0:
       break
-    z_angle = 2 * i * np.pi / num_child_branch
-    x_angle = random.uniform(0.5,2)
 
     pos1 = [0, 0, 0]
     pos2 = [0,0, 0.3]
@@ -62,12 +59,11 @@ def tree(num_child_branch = 6, branch_length = 0.5, thickness = 0.05,bhpr = [0.3
 
     b_pos =  [0, 0, z]
     # quat
-    target_vector = random_vector_upper_hemisphere()
-    R = align_z_to_vector(target_vector)
-    quat = rotation_matrix_to_quaternion(R.as_matrix())
+    target_vector = sample_targets[i]
+
 
     branch = current_body.add_body(name = "b" + str(i) + str(uuid.uuid4()) ,
-                                   pos = b_pos, quat = quat )
+                                   pos = b_pos, zaxis=target_vector )
     branch.add_geom(fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = rgba)
 
     tree(branch_length = branch_length,thickness = thickness,

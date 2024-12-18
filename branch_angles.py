@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import math
 
-
-
-
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
+# https://www.youtube.com/watch?v=4WRmjKDit2I
 def rotation_matrix_to_quaternion(rotation_matrix):
     """
     Convert a rotation matrix to a quaternion.
@@ -11,64 +11,55 @@ def rotation_matrix_to_quaternion(rotation_matrix):
     rotation = R.from_matrix(rotation_matrix)
     return rotation.as_quat()
 
-def random_vector_upper_hemisphere():
-    """
-    Generate a random unit vector on the upper hemisphere (z > 0).
-    """
-    # Random angles
-    theta = np.random.uniform(0, 2 * np.pi)  # Azimuthal angle
-    phi = np.random.uniform(0, np.pi / 2)    # Polar angle (upper hemisphere only)
+def sampling_from_upper_hemisphere(num_samples,phi_lower_limit=0, phi_upper_limit = np.pi / 2):
+    samples = []
+    samples_angle = []
+    for i in range(num_samples):
+        slice = (2 * np.pi)/4
+        limit = [i * slice , (i+1) * slice  ]
+        theta = np.random.uniform(limit[0],limit[1])  # Azimuthal angle
+        phi = np.random.uniform(phi_lower_limit ,phi_upper_limit)    # Polar angle (upper hemisphere only)
 
-    # Spherical to Cartesian conversion
-    x = np.sin(phi) * np.cos(theta)
-    y = np.sin(phi) * np.sin(theta)
-    z = np.cos(phi)
+        # Spherical to Cartesian conversion
+        x = np.sin(phi) * np.cos(theta)
+        y = np.sin(phi) * np.sin(theta)
+        z = np.cos(phi)
 
-    return np.array([x, y, z])
+        samples_angle.append([theta,phi])
+        samples.append( [x, y, z] )
 
-def align_z_to_vector(target_vector):
-    """
-    Compute a rotation matrix to align [0,0,1] with the given target vector.
-    """
-    # Normalize the target vector
-    target_vector = target_vector / np.linalg.norm(target_vector)
+    return samples ,samples_angle
 
-    # Original z-axis
-    z_axis = np.array([0, 0, 1])
+def get_frame_rotation(target_in_parent_frame):
 
-    # Compute the rotation axis
-    rotation_axis = np.cross(z_axis, target_vector)
-    rotation_axis_norm = np.linalg.norm(rotation_axis)
+    # mujoco makes capsules with z going through the capsule
+    # Therefore if both child and parent frame are on top of each other
+    # we can assume a unit vector [0, 0, 1] in both frames
 
-    if rotation_axis_norm < 1e-6:  # Vectors are already aligned
-        return np.eye(3)
+    # Now we are going to rotate the child frame in a way that unit vector [0, 0, 1]
+    # is on top of target vector in parent frame
 
-    rotation_axis = rotation_axis / rotation_axis_norm
+    # target is a vector sampled from a upper hemisphere made in parent frame
+    # therefore we have the following equation v_parent = R . v_child
+    # v_parent = target vector in parent frame
+    # v_child is [0, 0, 1]
+    # we have to find R
 
-    # Compute the rotation angle
-    cos_theta = np.dot(z_axis, target_vector)
-    angle = np.arccos(np.clip(cos_theta, -1, 1))
+    # R is Rz . Ry . Rx
+    # Finally we extract rpy from R
 
-    # Construct the rotation using Rodrigues' formula
-    rotation = R.from_rotvec(angle * rotation_axis)
-    return rotation
+    # v_parent = R . [0,0,1]^T -> v_parent = [[cos(beta) cos (gama)],[cos(beta) sin(gamma)],[-sin(beta)]]
+    x = target_in_parent_frame[0]
+    y = target_in_parent_frame[1]
+    z = target_in_parent_frame[1]
 
-# Generate a random target vector in the upper hemisphere
-target_vector = random_vector_upper_hemisphere()
-print(f"Target vector: {target_vector}")
+    print(f"x::{x}")
+    print(f"y::{y}")
+    print(f"z::{z}")
 
-# Compute the rotation
-rotation = align_z_to_vector(target_vector)
+    beta = math.asin(-z)
+    gamma = math.asin(y/beta)
 
-# Print the rotation matrix
-print("Rotation matrix:")
-print(rotation.as_matrix())
+    return beta, gamma
 
-# Convert rotation matrix to quaternion
-rotation_quaternion = rotation_matrix_to_quaternion(rotation.as_matrix())
-print("Rotation quaternion:")
-print(rotation_quaternion)
 
-# Verify the result
-aligned_vector = rotation.apply([0, 0, 1])
-print(f"Aligned vector: {aligned_vector}")

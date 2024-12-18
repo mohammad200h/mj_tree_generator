@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "mj-tree-generator"
+version = "0.1.0"
+description = ""
+authors = ["Mohammad Hamid <mohammad200h@hotmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+scipy = "^1.14.1"
+mujoco = "^3.2.5"
+matplotlib = "^3.10.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
