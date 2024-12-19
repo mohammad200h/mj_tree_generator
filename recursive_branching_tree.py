@@ -27,13 +27,13 @@ def sampling_from_upper_hemisphere(num_samples, phi_lower_limit=0, phi_upper_lim
 
 def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
          max_levels = 4, current_body = None,
-         spec = None ):
+         spec = None, bodies =[] ):
 
   root, spec = None, None
 
   rgba = [random.uniform(0, 1),
-          random.uniform(0,1),
-          random.uniform(0,1), 1]
+          random.uniform(0, 1),
+          random.uniform(0, 1), 1]
 
   # Initialization
   if current_body == None :
@@ -44,7 +44,11 @@ def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
     # Defaults for joint and geom
     main = spec.default()
     main.geom.type = mj.mjtGeom.mjGEOM_CAPSULE
-    main.geom.mass = 1
+    main.geom.mass = 0.001
+
+    # Joint Defaults
+    main.joint.type = mj.mjtJoint.mjJNT_BALL
+    main.joint.stiffness = 1
 
     # Trunk
     pos1 = [0, 0, 0]
@@ -52,24 +56,26 @@ def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
     current_body = current_body.add_body(name = "trunk")
     current_body.add_geom( fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = [1,1,0,1])
     root = current_body
+    bodies.append(current_body.name)
 
   if max_levels <= 0:
-      # create a leafs
+      # Create  leafs
       slice = np.pi * 2/3
       for l in range(3):
-        body = current_body.add_body( name = "leaf" + str(uuid.uuid4()),
+        leaf = current_body.add_body( name = "leaf" + str(uuid.uuid4()),
                                       pos = [ 0,0, branch_length + thickness ],
                                       euler = [0, 0, slice * l ]
                                       )
 
-        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.01, 0.01, 0.001],
+        leaf.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.01, 0.01, 0.001],
                       pos = [0.02, 0, 0], rgba = rgba)
-        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
+        leaf.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
                       pos = [0.03 , 0, 0],
                       euler = [0, 0, 0.785398],rgba = rgba)
-        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
+        leaf.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
                       pos = [0.01 , 0, 0],
                       euler = [0, 0, 0.785398],rgba = rgba)
+        bodies.append(leaf.name)
   else:
     thickness = (2/4) * thickness
     branch_length *= 0.6
@@ -88,13 +94,18 @@ def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
                                      pos = b_pos, zaxis = zaxis )
       branch.add_geom(fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = rgba)
 
+      branch.add_joint(name = "b" + str(i) + str(uuid.uuid4()))
+
+      bodies.append(branch.name)
+
       tree(branch_length = branch_length, thickness = thickness,
            max_levels = max_levels - 1, current_body = branch, spec = spec )
 
-  return root , spec
+
+  return root , spec, bodies
 
 if __name__ == "__main__":
-  root, spec = tree()
+  root, spec, _ = tree()
   model = spec.compile()
   data = mj.MjData(model)
 
