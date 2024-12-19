@@ -5,6 +5,7 @@ import numpy as np
 import math
 import uuid
 
+from leaf import leaf
 
 def sampling_from_upper_hemisphere(num_samples, phi_lower_limit=0, phi_upper_limit = np.pi / 2):
     # https://www.youtube.com/watch?v=Ex_g2w4E5lQ&t=201s
@@ -24,8 +25,8 @@ def sampling_from_upper_hemisphere(num_samples, phi_lower_limit=0, phi_upper_lim
 
     return samples
 
-def tree(num_child_branch = 4, branch_length = 0.5, thickness = 0.05,
-         max_levels = 5, current_body = None,
+def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
+         max_levels = 4, current_body = None,
          spec = None ):
 
   root, spec = None, None
@@ -50,31 +51,45 @@ def tree(num_child_branch = 4, branch_length = 0.5, thickness = 0.05,
     pos2 = [0, 0, branch_length]
     current_body = current_body.add_body(name = "trunk")
     current_body.add_geom( fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = [1,1,0,1])
+    root = current_body
 
-  thickness = (2/4) * thickness
-  branch_length *= 0.6
+  if max_levels <= 0:
+      # create a leafs
+      slice = np.pi * 2/3
+      for l in range(3):
+        body = current_body.add_body( name = "leaf" + str(uuid.uuid4()),
+                                      pos = [ 0,0, branch_length + thickness ],
+                                      euler = [0, 0, slice * l ]
+                                      )
 
-  sample_vectors = sampling_from_upper_hemisphere(num_child_branch, 0.2, np.pi / 3)
+        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.01, 0.01, 0.001],
+                      pos = [0.02, 0, 0], rgba = rgba)
+        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
+                      pos = [0.03 , 0, 0],
+                      euler = [0, 0, 0.785398],rgba = rgba)
+        body.add_geom(type =  mj.mjtGeom.mjGEOM_BOX, size = [0.0071, 0.0071, 0.001],
+                      pos = [0.01 , 0, 0],
+                      euler = [0, 0, 0.785398],rgba = rgba)
+  else:
+    thickness = (2/4) * thickness
+    branch_length *= 0.6
+    sample_vectors = sampling_from_upper_hemisphere(num_child_branch, 0.2, np.pi / 3)
+    for i in range(num_child_branch):
+      pos1 = [0, 0, 0]
+      pos2 = [0,0, branch_length]
 
-  for i in range(num_child_branch):
-    if max_levels <= 0:
-      break
+      # Branch pose
+      z = random.uniform(0.9 * branch_length, branch_length)
+      b_pos =  [0, 0, z]
+      zaxis = sample_vectors[i]
 
-    pos1 = [0, 0, 0]
-    pos2 = [0,0, branch_length]
+      # Branch Creation
+      branch = current_body.add_body(name = "b" + str(i) + str(uuid.uuid4()) ,
+                                     pos = b_pos, zaxis = zaxis )
+      branch.add_geom(fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = rgba)
 
-    # Branch pose
-    z = random.uniform(0.9 * branch_length, branch_length)
-    b_pos =  [0, 0, z]
-    zaxis = sample_vectors[i]
-
-    # Branch Creation
-    branch = current_body.add_body(name = "b" + str(i) + str(uuid.uuid4()) ,
-                                   pos = b_pos, zaxis = zaxis )
-    branch.add_geom(fromto = pos1 + pos2, size = [thickness, 0, 0], rgba = rgba)
-
-    tree(branch_length = branch_length, thickness = thickness,
-         max_levels = max_levels - 1, current_body = branch, spec = spec )
+      tree(branch_length = branch_length, thickness = thickness,
+           max_levels = max_levels - 1, current_body = branch, spec = spec )
 
   return root , spec
 
