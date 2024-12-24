@@ -10,6 +10,8 @@ python = "^3.12"
 scipy = "^1.14.1"
 mujoco = "^3.2.5"
 matplotlib = "^3.10.0"
+opencv-python = "^4.10.0.84"
+tqdm = "^4.67.1"
 
 
 [build-system]

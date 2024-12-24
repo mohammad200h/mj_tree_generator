@@ -25,7 +25,7 @@ def sampling_from_upper_hemisphere(num_samples, phi_lower_limit=0, phi_upper_lim
 
     return samples
 
-def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
+def tree(damping = None, stiffness = None, j_range = None, num_child_branch = 3,  branch_length = 0.5, thickness = 0.05,
          max_levels = 4, current_body = None,
          spec = None, bodies =[] ):
 
@@ -48,7 +48,14 @@ def tree(num_child_branch = 4,  branch_length = 0.5, thickness = 0.05,
 
     # Joint Defaults
     main.joint.type = mj.mjtJoint.mjJNT_BALL
-    main.joint.stiffness = 1
+    if j_range !=None:
+      main.joint.range = [0,j_range]
+
+    if damping != None:
+      main.joint.damping = damping
+    if stiffness != None:
+      main.joint.stiffness = stiffness
+
 
     # Trunk
     pos1 = [0, 0, 0]
@@ -118,3 +125,5 @@ if __name__ == "__main__":
     while viewer.is_running():
       mj.mj_step(model, data)
       viewer.sync()
+
+# https://mujoco.readthedocs.io/en/latest/overview.html#divergence

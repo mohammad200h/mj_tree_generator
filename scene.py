@@ -1,6 +1,6 @@
 from recursive_branching_tree import tree
 from arena import Arena
-
+import numpy as np
 import mujoco as mj
 
 if __name__ =="__main__":
@@ -15,10 +15,22 @@ if __name__ =="__main__":
             continue
         spec.add_exclude(bodyname1=body,bodyname2=other_body)
 
-
   arena.add_fixed_asset(root,[0,0,0.05])
 
   model = arena.spec.compile()
+  # print(f"model.opt::{model.opt}")
+  model.opt.wind = np.array([10,0,0])
+
+  ######### Saving Model ###########
+  with open("model.xml", "w") as file:
+    file.write(arena.spec.to_xml())
+
+  duration = 4   # (seconds)
+  framerate = 60  # (Hz)
+  frames = []
+  slowdown = 2
+  r_width, r_height = 640, 480
+
   data = mj.MjData(model)
 
   # visualization
